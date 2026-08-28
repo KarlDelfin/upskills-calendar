@@ -7,6 +7,8 @@ import debounce from 'lodash/debounce';
 import { markRaw } from 'vue'
 import { Delete } from '@element-plus/icons-vue'
 
+import { useAuthStore } from './useAuthStore';
+
 export interface Calendar {
     calendarId: number | string,
     userId: string,
@@ -25,9 +27,13 @@ export const useCalendarStore = defineStore('calendar', {
     state: () => ({
         title: '' as String,
         loading: false as Boolean,
-        search: '' as String,
+        search: {
+            calendar: '' as string,
+            user: '' as string
+        },
         selectedCalendarId: '' as string,
 
+        users: [] as any[],
         calendars: [] as Calendar[],
         calendarForm: {} as Calendar,
 
@@ -62,8 +68,8 @@ export const useCalendarStore = defineStore('calendar', {
                     .from('Calendar')
                     .select('*', { count: 'exact' })
 
-                if (this.search && this.search.trim() !== '') {
-                    query = query.ilike('name', `%${this.search}%`);
+                if (this.search.calendar && this.search.calendar.trim() !== '') {
+                    query = query.ilike('name', `%${this.search.calendar}%`);
                 }
 
                 query = query.order('dateTimeCreated', { ascending: false }).range(from, to);
@@ -161,7 +167,7 @@ export const useCalendarStore = defineStore('calendar', {
         },
 
         /* DIALOG CONTROLLER */
-        formController(action: string, data: any) {
+        async formController(action: string, data: any) {
             this.title = action
             this.dialog.calendar = true
 
@@ -174,6 +180,34 @@ export const useCalendarStore = defineStore('calendar', {
             if(action === 'Share Calendar'){
                 this.dialog.sharedCalendar = true
                 this.selectedCalendarId = data.calendarId
+                await this.getUsersByEmail()
+            }
+        },
+
+        /* GET USER BY EMAIL */
+        async getUsersByEmail() {
+            const authStore = useAuthStore()
+            this.users = []
+            this.loading = true;
+            
+            try {
+                const { data: { users }, error } = await supabase.auth.admin.listUsers(
+                    {
+                        page: 1,
+                        perPage: 10
+                    });
+                if (error) throw error;
+                
+                const user = users.find( u => u.email === this.search.user && u.id !== authStore.user.user_metadata?.id);
+
+                if (user) {
+                    this.users.push(user);
+                }
+            } catch (error) {
+                ElMessage.error('An unexpected error occurred');
+                console.error(error);
+            } finally {
+                this.loading = false;
             }
         },
 

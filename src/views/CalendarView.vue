@@ -12,7 +12,7 @@
         <div class="mb-6 flex justify-between w-full gap-3">
             <div class="w-full">
                 <el-input
-                    v-model="calendarStore.search"
+                    v-model="calendarStore.search.calendar"
                     @input="calendarStore.searchCalendar" 
                     placeholder="Search calendar by name..." 
                     :prefix-icon="Search"

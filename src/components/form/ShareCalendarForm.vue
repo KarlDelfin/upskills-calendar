@@ -1,6 +1,6 @@
 <template>
 <!-- SHARE CALENDAR DIALOG -->
-    <el-dialog v-model="dialog.sharedCalendarForm" :title="dialog.title" center :before-close="clear" width="600">
+    <el-dialog v-model="calendarStore.dialog.sharedCalendar" :title="calendarStore.dialog.title" center :before-close="calendarStore.clear" width="600">
         <el-tabs v-model="tab" class="demo-tabs" @tab-click="changeTab">
             <el-tab-pane label="Assign User" name="first">
                 <el-form label-position="top">
@@ -50,4 +50,16 @@
     </el-dialog>
 </template>
 
-<script lang="ts"></script>
+<script lang="ts">
+import { useCalendarStore } from '@/stores/useCalendarStore'
+
+export default {
+    setup() {
+        const calendarStore = useCalendarStore()
+        return { calendarStore }
+    },
+    data() {
+        return {}
+    }
+}
+</script>
