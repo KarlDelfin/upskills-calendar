@@ -25,8 +25,12 @@ export interface CalendarPagination {
 
 export const useCalendarStore = defineStore('calendar', {
     state: () => ({
+        tab: 'first' as string,
         title: '' as String,
-        loading: false as Boolean,
+        loading: {
+            calendar: false,
+            sharedCalendar: false
+        },
         search: {
             calendar: '' as string,
             user: '' as string
@@ -47,18 +51,23 @@ export const useCalendarStore = defineStore('calendar', {
             calendar: false as Boolean,
             sharedCalendar: false as Boolean,
         }
-
     }),
+    getters: {
+        userId() {
+            const authStore = useAuthStore()
+            return authStore.user?.id || null
+        }
+    },
     actions: {
         searchCalendar: debounce(function(this: any) {
             this.fetchCalendars()
             this.calendarPagination.currentPage = 1
-        }, 300),
+        }, 500),
         
         /* GET WITH SEARCH */
         async fetchCalendars(): Promise<void> {
             try {
-                this.loading = true
+                this.loading.calendar = true
 
                 const limit = this.calendarPagination.elementsPerPage;
                 const from = (this.calendarPagination.currentPage - 1) * limit;
@@ -90,7 +99,7 @@ export const useCalendarStore = defineStore('calendar', {
                 console.log(error)
             }
             finally {
-                this.loading = false
+                this.loading.calendar = false
             }
         },
 
@@ -104,12 +113,12 @@ export const useCalendarStore = defineStore('calendar', {
                     icon: markRaw(Delete),
                 })
 
-                this.loading = true
+                this.loading.calendar = true
 
                 const { error } = await supabase
                     .from('Calendar')
                     .delete()
-                    .eq('id', id)
+                    .eq('calendarId', id)
 
                 if (error) throw error
 
@@ -119,95 +128,211 @@ export const useCalendarStore = defineStore('calendar', {
             } catch (error) {
                 console.error(error)
             } finally {
-                this.loading = false
+                this.loading.calendar = false
             }
         },
 
-        /* CREATE / UPDATE */
-        async submitForm(): Promise<void> {
-            try{
+        /* CREATE CALENDAR */
+        async createCalendar() {
+            const payload = {
+                userId: this.userId,
+                calendarName: this.calendarForm.calendarName,
+            }
+            try {
+                const { error } = await supabase
+                .from('Calendar')
+                .insert(payload) 
+
+                if(error) throw error
+
+                await this.fetchCalendars()
+                this.clear()
+
+                ElMessage.success('Calendar created successfully.')
+            }
+            catch(error) {
+                console.error(error)
+                ElMessage.error("Failed to create calendar.")
+            }
+            finally {
+                this.loading.calendar = false
+            }
+        },
+
+        /* EDIT CALENDAR */
+        async editCalendar() {
+            try {
                 const payload = {
-                    userId: this.calendarForm.userId,
+                    userId: this.userId,
                     calendarName: this.calendarForm.calendarName,
                 }
 
-                if(this.title === 'Create Calendar') {
-                    const { error } = await supabase
-                    .from('Calendar')
-                    .insert(payload) 
+                const { error } = await supabase
+                .from('Calendar')
+                .update(payload)
+                .eq('calendarId', this.calendarForm.calendarId)
 
-                    if(error) throw error
+                if(error) throw error
 
-                    await this.fetchCalendars()
-                    this.clear()
+                await this.fetchCalendars()
+                this.clear()
 
-                    ElMessage.success('Calendar created successfully.')
-                }
-
-                if(this.title === 'Edit Calendar') {
-                    const { error } = await supabase
-                    .from('Calendar')
-                    .update(payload)
-                    .eq('id', this.calendarForm.calendarId)
-
-                    if(error) throw error
-
-                    await this.fetchCalendars()
-                    this.clear()
-
-                    ElMessage.success('Calendar updated successfully.')
-                }
-
-            } catch (error) {
+                ElMessage.success('Calendar updated successfully.')
+            } catch(error) {
                 console.error(error)
+                ElMessage.error("Failed to update calendar.")
             } finally {
-                this.loading = false
-                this.dialog.calendar = false
+                this.loading.calendar = false
             }
         },
 
         /* DIALOG CONTROLLER */
         async formController(action: string, data: any) {
             this.title = action
-            this.dialog.calendar = true
 
-            if(action == "Created Calendar") {}
+            if(action == "Create Calendar") {
+                this.dialog.calendar = true
+            }
 
             if(action == "Edit Calendar") {
+                this.dialog.calendar = true
                 this.calendarForm = { ...data }
             }
 
-            if(action === 'Share Calendar'){
+            if(action === 'Shared Calendar'){
                 this.dialog.sharedCalendar = true
                 this.selectedCalendarId = data.calendarId
-                await this.getUsersByEmail()
             }
         },
 
-        /* GET USER BY EMAIL */
-        async getUsersByEmail() {
-            const authStore = useAuthStore()
-            this.users = []
-            this.loading = true;
-            
-            try {
-                const { data: { users }, error } = await supabase.auth.admin.listUsers(
-                    {
-                        page: 1,
-                        perPage: 10
-                    });
-                if (error) throw error;
-                
-                const user = users.find( u => u.email === this.search.user && u.id !== authStore.user.user_metadata?.id);
+        searchUserByEmail: debounce(function(this: any) {
+            this.getUserByEmail()
+        }, 500),
 
-                if (user) {
-                    this.users.push(user);
-                }
+        /* GET USER BY EMAIL */
+        async getUserByEmail() {
+            this.loading.sharedCalendar = true;
+            try {
+                const { data, error } = await supabase.rpc('search_users_by_email', {
+                    search_term: this.search.user
+                });
+                if (error) throw error;
+                this.users = data || []
             } catch (error) {
                 ElMessage.error('An unexpected error occurred');
                 console.error(error);
             } finally {
-                this.loading = false;
+                this.loading.sharedCalendar = false;
+            }
+        },
+
+        /* GET ASSGINED USERS */
+        async getAssignedUsers() {
+            this.loading.sharedCalendar = true
+
+            try {
+                const { data: sharedUsers, error } = await supabase
+                    .from('SharedCalendar')
+                    .select('*')
+                    .eq('calendarId', this.selectedCalendarId)
+                    .eq('calendarOwnerUserId', this.userId)
+
+                if (error) throw error
+
+                const { data: { users } } = await supabase.auth.admin.listUsers()
+                    const sharedUserIds = sharedUsers.map( item => item.shareToUserId )
+                    this.users = users.filter(user => sharedUserIds.includes(user.id) )
+
+            } catch (error) {
+                console.error(error)
+            } finally {
+                this.loading.sharedCalendar = false
+            }
+        },
+
+        /* CHANGE SHARED CALENDAR FORM TAB */
+        changeTab(data: any){
+            this.users = []
+            if(data.paneName === 'first'){ }
+            if(data.paneName === 'second'){
+                this.getAssignedUsers()
+            }
+        },
+
+        /* ASSIGN USER TO A CALENDAR */
+        async assignUser(userId: string) {
+
+            this.loading.sharedCalendar = true;
+            let payload = {
+                calendarId: this.selectedCalendarId,
+                shareToUserId: userId,
+                calendarOwnerUserId: this.userId
+            }
+            /* CHECK IF USER ALREADY HAS ACCESS TO THIS CALENDAR */
+            try{
+                const { data, error} = await supabase
+                    .from('SharedCalendar')
+                    .select('*')
+                    .eq('shareToUserId', userId)
+                    .eq('calendarId', this.selectedCalendarId)
+                if(error) throw error
+                if(data.length > 0) {
+                    ElMessage.warning('The user already has access to this calendar')
+                    return
+                }
+            }
+            catch(error){
+                ElMessage.error('An unexpected error occurred')
+                console.error(error)
+            }
+            finally{
+                this.loading.sharedCalendar = false;
+            }
+            
+            /* ASSIGN USER */
+            try{
+                const { data, error } = await supabase
+                    .from('SharedCalendar')
+                    .insert(payload)
+                if(error) throw error
+                ElMessage.success("User assigned successfully.")
+                await this.getUserByEmail()
+            }
+            catch(error){
+                ElMessage.error('Failed to assign user.')
+                console.error(error)
+            }
+            finally{
+                this.loading.sharedCalendar = false;
+            }
+        },
+
+        /* UNASSIGN USER TO A CALENDAR */
+        async unassignUser(userId: string) {
+            await ElMessageBox.confirm('Do you want to remove this user?', 'Warning', {
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel',
+                type: 'warning',
+                icon: markRaw(Delete),
+            })
+
+            this.loading.sharedCalendar = true;
+
+            try {
+                let { error } = await supabase
+                    .from('SharedCalendar')
+                    .delete()
+                    .eq('shareToUserId', userId)
+                    .eq('calendarId', this.selectedCalendarId);
+
+                if (error) throw error
+                ElMessage.success("User unassigned successfully")
+                this.getAssignedUsers();
+            } catch (error) {
+                console.error(error);
+                ElMessage.error('Failed to unassign user.')
+            } finally {
+                this.loading.sharedCalendar = false;
             }
         },
 
@@ -219,7 +344,11 @@ export const useCalendarStore = defineStore('calendar', {
                 description: '',
                 price: null,
             })
-            this.dialog.calendar = false
+            Object.assign(this.dialog, {
+                calendar: false,
+                sharedCalendar: false
+            })
+            this.tab = 'first'
         }
     }
 })
