@@ -4,10 +4,16 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
+      path: '/calendar',
       name: 'Calendar',
       component: () => import('../views/CalendarView.vue'),
       meta: { title: 'Calendar' }
+    },
+    {
+      path: '/',
+      name: 'Home',
+      component: () => import('../views/HomeView.vue'),
+      meta: { title: 'Home' }
     },
   ],
 })

@@ -349,6 +349,9 @@ export const useCalendarStore = defineStore('calendar', {
                 sharedCalendar: false
             })
             this.tab = 'first'
+            this.search.user = ''
+            this.search.calendar = ''
+            this.users = []
         }
     }
 })

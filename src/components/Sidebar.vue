@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-container">
+  <div v-if="$route.path !== '/'" class="sidebar-container">
     <div
       v-if="isMobile && !isCollapsed"
       class="fixed inset-0 bg-black/50 z-40 md:hidden"

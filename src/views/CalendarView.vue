@@ -52,7 +52,7 @@
                 </template>
             </el-table-column>
         
-            <el-table-column prop="name" label="Name" sortable>
+            <el-table-column prop="name" label="Name">
                 <template #default="scope">
                     <span class="font-semibold">{{ scope.row.calendarName }}</span>
                 </template>
@@ -60,7 +60,7 @@
 
             <el-table-column label="Share Calendar" align="center">
                 <template #default="scope">
-                    <el-button @click="calendarStore.formController('Shared Calendar', scope.row)" size="small">View Users</el-button>
+                    <el-button @click="calendarStore.formController('Shared Calendar', scope.row)" size="small"><el-icon class="mr-1"><User /></el-icon>View Users</el-button>
                 </template>
             </el-table-column>
 

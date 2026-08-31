@@ -1,7 +1,7 @@
 <template>
     <!-- SHARE CALENDAR DIALOG -->
     <el-dialog v-model="calendarStore.dialog.sharedCalendar" :title="calendarStore.title" center :before-close="calendarStore.clear" width="600">
-        <el-tabs v-model="calendarStore.tab" class="demo-tabs" @tab-click="calendarStore.changeTab">
+        <el-tabs v-model="calendarStore.tab" @tab-click="calendarStore.changeTab">
             <el-tab-pane label="Assign User" name="first">
                 <el-form label-position="top">
                     <el-input placeholder="Search user email address" v-model="calendarStore.search.user" @input="calendarStore.searchUserByEmail"/>
