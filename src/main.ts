@@ -17,6 +17,8 @@ import 'v-calendar/style.css'
 import { useAuthStore } from './stores/useAuthStore'
 import { supabase } from './utils/supabaseClient'
 
+import 'tippy.js/dist/tippy.css'
+
 async function initApp() {
   const app = createApp(App)
 

@@ -71,7 +71,7 @@
     </el-card>
 
     <el-card class="w-full">
-      <FullCalendar class="fullCalendar" ref="refCalendar" :options="calendarOptions" />
+      <FullCalendar class="fullCalendar" ref="refCalendar" :options="calendarOptions" v-loading="calendarEventStore.loading"/>
     </el-card>
   </div>
 
@@ -81,7 +81,7 @@
   <!-- CALENDAR EVENT FORM -->
   <CalendarEventForm/>
 
-<!-- RECURRING EVENT CONFIRMATION DIALOG -->
+  <!-- RECURRING EVENT CONFIRMATION DIALOG -->
   <el-dialog
     v-model="calendarEventStore.dialog.calendarEventConfirmation"
     :title="calendarEventStore.dialog.title"
@@ -162,10 +162,11 @@ import list from '@fullcalendar/list'
 import { ElMessage } from 'element-plus'
 import moment from 'moment'
 import { v4 as uuidv4 } from 'uuid'
-import * as bootstrap from 'bootstrap'
 import type { CalendarOptions } from '@fullcalendar/core'
 import CalendarForm from '@/components/form/CalendarForm.vue'
 import CalendarEventForm from '@/components/form/CalendarEventForm.vue'
+import tippy from 'tippy.js'
+
 export default defineComponent({
   name: 'HomeView',
   components: { FullCalendar, CalendarForm, CalendarEventForm },
@@ -208,18 +209,17 @@ export default defineComponent({
         },
 
         eventDidMount: (info) => {
-          const description = info.event.extendedProps.calendarEventDescription
-          const startTime = info.event.extendedProps.startTime
-          const endTime = info.event.extendedProps.endTime
-          const title = info.event.title
+          const description = info.event.extendedProps.calendarEventDescription || '';
+          const startTime = info.event.extendedProps.startTime || '';
+          const endTime = info.event.extendedProps.endTime || '';
+          const title = info.event.title;
 
-          return new bootstrap.Popover(info.el, {
+          tippy(info.el, {
             placement: 'auto',
-            trigger: 'hover',
-            container: 'body',
-            customClass: 'popoverStyle',
+            trigger: 'mouseenter',
+            appendTo: document.body,
+            allowHTML: true,
             content: `
-              <div class="!bg-white p-3 z-50 rounded-lg shadow-lg">
                 <span class="font-bold">${title}</span>
                 <br>
                 <span class="italic">${description}</span>
@@ -227,10 +227,8 @@ export default defineComponent({
                 <div class="flex justify-center">
                   <small class='font-bold '>${startTime} - ${endTime}</small>
                 </div>
-              </div>
             `,
-            html: true,
-          })
+          });
         },
 
         views: {
@@ -251,7 +249,7 @@ export default defineComponent({
         },
 
         headerToolbar: {
-          start: 'todayCustom,prevCustom,nextCustom',
+          start: 'prevCustom,todayCustom,nextCustom refreshCustom',
           center: 'title',
           end: 'createEvent monthCustom,weekCustom,dayCustom,listCustom',
         },
@@ -261,17 +259,8 @@ export default defineComponent({
             text: 'Create Event',
             click: () => this.calendarEventStore.formController('Create Event'),
           },
-          todayCustom: {
-            text: 'today',
-            click: () => {
-              this.calendarEventStore.pickerKey++
-              this.calendarEventStore.today = new Date()
-              this.calendarApi.today()
-              this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
-            },
-          },
           prevCustom: {
-            text: 'prev',
+            text: '‹',
             click: () => {
               this.calendarEventStore.pickerKey++
               this.calendarApi.prev()
@@ -280,8 +269,18 @@ export default defineComponent({
               this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
             },
           },
+          todayCustom: {
+            text: 'Today',
+            click: () => {
+              this.calendarEventStore.pickerKey++
+              this.calendarEventStore.today = new Date()
+              this.calendarApi.today()
+              this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
+            },
+          },
+         
           nextCustom: {
-            text: 'next',
+            text: '›',
             click: () => {
               this.calendarEventStore.pickerKey++
               this.calendarApi.next()
@@ -290,8 +289,14 @@ export default defineComponent({
               this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
             },
           },
+          refreshCustom: {
+            text: 'Refresh',
+            click: () => {
+              this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
+            },
+          },
           monthCustom: {
-            text: 'month',
+            text: 'Month',
             click: () => {
               this.calendarEventStore.weekClicked = false
               this.calendarEventStore.dayClicked = false
@@ -300,7 +305,7 @@ export default defineComponent({
             },
           },
           weekCustom: {
-            text: 'week',
+            text: 'Week',
             click: () => {
               this.calendarEventStore.weekClicked = true
               this.calendarEventStore.dayClicked = false
@@ -309,7 +314,7 @@ export default defineComponent({
             },
           },
           dayCustom: {
-            text: 'day',
+            text: 'Day',
             click: () => {
               this.calendarEventStore.weekClicked = false
               this.calendarEventStore.dayClicked = true
@@ -318,7 +323,7 @@ export default defineComponent({
             },
           },
           listCustom: {
-            text: 'list',
+            text: 'List',
             click: () => {
               this.calendarApi.changeView('listMonth')
               this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
@@ -450,6 +455,7 @@ export default defineComponent({
         if (error) throw error
 
         await this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
+        this.updateCalendarSource()
       } catch (error) {
         console.error(error)
       } finally {

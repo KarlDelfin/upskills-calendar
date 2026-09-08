@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { supabase } from '../utils/supabaseClient'
-import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import moment from 'moment'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -260,15 +260,15 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
           })
 
           if (error) {
-            ElMessage.error('Failed to add Calendar')
+            ElMessage.error('Failed to add Calendar.')
             return
           }
 
-          ElMessage.success('Calendar added successfully')
+          ElMessage.success('Calendar added successfully.')
           this.clear()
           await this.getCalendarsByUserId()
         } catch (error) {
-          ElMessage.error('An unexpected error occurred')
+          ElMessage.error('An unexpected error occurred.')
           console.error(error)
         } finally {
           this.loading = false
@@ -367,15 +367,15 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
           const { error } = await supabase.from('CalendarEvent').insert(calendarEventsPayload)
 
           if (error) {
-            ElMessage.error('Failed to add Calendar Event')
+            ElMessage.error('Failed to add Event.')
             return
           }
 
-          ElMessage.success('Calendar Event added successfully')
+          ElMessage.success('Event added successfully.')
           this.clear()
           await this.getCalendarEventsByCalendarId(this.selectedCalendarId)
         } catch (error) {
-          ElMessage.error('An unexpected error occurred')
+          ElMessage.error('An unexpected error occurred.')
           console.error(error)
         } finally {
           this.loading = false
@@ -386,7 +386,6 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     /* GET CALENDARS BY USER ID */
     async getCalendarsByUserId() {
       this.sidebar.sharedCalendarId = ''
-      this.loading = true
       try {
         const userId = await this.getCurrentUserId()
         const { data, error } = await supabase
@@ -416,14 +415,12 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
         ElMessage.error('An unexpected error occurred')
         console.error(error)
       } finally {
-        this.loading = false
       }
     },
 
     /* GET SHARED CALENDARS */
     async getSharedCalendarsByUserId() {
       this.sidebar.calendarId = ''
-      this.loading = true
       try {
         const userId = await this.getCurrentUserId()
         const { data, error } = await supabase
@@ -461,7 +458,6 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
         ElMessage.error('An unexpected error occurred')
         console.error(error)
       } finally {
-        this.loading = false
       }
     },
 
@@ -474,11 +470,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
         return
       }
 
-      const loadingInstance = ElLoading.service({
-        lock: true,
-        text: 'Loading',
-        background: 'rgba(0, 0, 0, 0.7)',
-      })
+      this.loading = true
 
       try {
         const { data, error } = await supabase
@@ -501,17 +493,13 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
         ElMessage.error('An unexpected error occurred')
         console.error(error)
       } finally {
-        loadingInstance.close()
+        this.loading = false
       }
     },
 
     /* DELETE CALENDAR EVENT */
     async deleteCalendarEvent() {
-      const loadingInstance = ElLoading.service({
-        lock: true,
-        text: 'Loading',
-        background: 'rgba(0, 0, 0, 0.7)',
-      })
+      this.loading = true
 
       try {
         await ElMessageBox.confirm('Do you want to delete this Event?', 'Warning', {
@@ -540,17 +528,17 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
               .eq('calendarEventId', this.calendarEventForm.calendarEventId)
           }
 
-          ElMessage.success('Event deleted successfully')
+          ElMessage.success('Event deleted successfully.')
           this.clear()
           await this.getCalendarEventsByCalendarId(this.selectedCalendarId)
         } catch (error) {
-          ElMessage.error('An unexpected error occurred')
+          ElMessage.error('An unexpected error occurred.')
           console.error(error)
         } finally {
-          loadingInstance.close()
+          this.loading = false
         }
       } catch {
-        loadingInstance.close()
+        this.loading = false
       }
     },
 
