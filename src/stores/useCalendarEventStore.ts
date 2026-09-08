@@ -88,9 +88,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     },
 
     loading: false,
-
     calendars: [] as (Calendar | SharedCalendar)[],
-    selectedCalendarEvent: {} as Record<string, boolean>,
     calendarEvents: [] as CalendarEvent[],
     rawCalendarEvents: [] as CalendarEvent[],
 

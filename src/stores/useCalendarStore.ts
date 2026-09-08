@@ -190,11 +190,11 @@ export const useCalendarStore = defineStore('calendar', {
         async formController(action: string, data: any) {
             this.title = action
 
-            if(action == "Create Calendar") {
+            if(action === "Create Calendar") {
                 this.dialog.calendar = true
             }
 
-            if(action == "Edit Calendar") {
+            if(action === "Edit Calendar") {
                 this.dialog.calendar = true
                 this.calendarForm = { ...data }
             }
@@ -253,6 +253,7 @@ export const useCalendarStore = defineStore('calendar', {
         /* CHANGE SHARED CALENDAR FORM TAB */
         changeTab(data: any){
             this.users = []
+            this.search.user = ''
             if(data.paneName === 'first'){ }
             if(data.paneName === 'second'){
                 this.getAssignedUsers()
@@ -280,6 +281,26 @@ export const useCalendarStore = defineStore('calendar', {
                     ElMessage.warning('The user already has access to this calendar')
                     return
                 }
+
+                /* ASSIGN USER */
+                try{
+                    const { data, error } = await supabase
+                        .from('SharedCalendar')
+                        .insert(payload)
+                    if(error) throw error
+                    ElMessage.success("User assigned successfully.")
+                    await this.getUserByEmail()
+                    
+                }
+                catch(error){
+                    ElMessage.error('Failed to assign user.')
+                    console.error(error)
+                }
+                finally{
+                    this.loading.sharedCalendar = false;
+                    this.search.user = '';
+                    this.users = [];
+                }
             }
             catch(error){
                 ElMessage.error('An unexpected error occurred')
@@ -289,22 +310,7 @@ export const useCalendarStore = defineStore('calendar', {
                 this.loading.sharedCalendar = false;
             }
             
-            /* ASSIGN USER */
-            try{
-                const { data, error } = await supabase
-                    .from('SharedCalendar')
-                    .insert(payload)
-                if(error) throw error
-                ElMessage.success("User assigned successfully.")
-                await this.getUserByEmail()
-            }
-            catch(error){
-                ElMessage.error('Failed to assign user.')
-                console.error(error)
-            }
-            finally{
-                this.loading.sharedCalendar = false;
-            }
+           
         },
 
         /* UNASSIGN USER TO A CALENDAR */

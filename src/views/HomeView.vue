@@ -55,7 +55,7 @@
         <el-checkbox 
           v-for="calendarEvent in calendarEventStore.calendarEvents" 
           :key="calendarEvent.calendarEventId"
-          v-model="calendarEventStore.selectedCalendarEvent[calendarEvent.calendarEventId!]"
+          v-model="selectedCalendarEvent[calendarEvent.calendarEventId!]"
           :label="calendarEvent.calendarEventName" 
           :value="calendarEvent.calendarEventId" 
           @change="handleCheckboxChange(calendarEvent.calendarEventId!, calendarEvent.calendarEventGroupId!)"
@@ -115,7 +115,7 @@
     width="500"
     center
   >
-    <div class="border p-3">
+    <div class="border border-gray-200 rounded p-3">
       <label class="font-bold">Event Name: </label>
       {{ calendarEventStore.calendarEventForm.calendarEventName }}
       <br />
@@ -177,6 +177,7 @@ export default defineComponent({
 
   data() {
     return {
+      selectedCalendarEvent: {} as Record<string, boolean>,
       currentUserId: '' as string,
       calendarApi: null as any,
     }
@@ -210,17 +211,23 @@ export default defineComponent({
           const description = info.event.extendedProps.calendarEventDescription
           const startTime = info.event.extendedProps.startTime
           const endTime = info.event.extendedProps.endTime
+          const title = info.event.title
+
           return new bootstrap.Popover(info.el, {
-            title: info.event.title,
             placement: 'auto',
             trigger: 'hover',
+            container: 'body',
             customClass: 'popoverStyle',
             content: `
-                <span class="fst-italic">${description}</span>
+              <div class="!bg-white p-3 z-50 rounded-lg shadow-lg">
+                <span class="font-bold">${title}</span>
+                <br>
+                <span class="italic">${description}</span>
                 <hr>
-                <div class="d-flex justify-content-center">
-                  <small class='fw-bold'>${startTime} - ${endTime}</small>
+                <div class="flex justify-center">
+                  <small class='font-bold '>${startTime} - ${endTime}</small>
                 </div>
+              </div>
             `,
             html: true,
           })
@@ -367,6 +374,7 @@ export default defineComponent({
         allDay:
           this.calendarApi?.view?.type !== 'timeGridWeek' &&
           this.calendarApi?.view?.type !== 'timeGridDay',
+          
         rrule: event.isRecurring
           ? {
               freq: 'weekly',
@@ -479,23 +487,53 @@ export default defineComponent({
     checkAllEvents() {
       this.calendarEventStore.calendarEvents.forEach((calendarEvent) => {
         if (calendarEvent.calendarEventId) {
-          this.calendarEventStore.selectedCalendarEvent[calendarEvent.calendarEventId] = true
+          this.selectedCalendarEvent[calendarEvent.calendarEventId] = true
         }
       })
+
+      const events = this.calendarOptions.events
+
+      if (!Array.isArray(events)) {
+        return
+      }
+
+      this.calendarOptions.events = events.map((event: any) => {
+        return {
+          ...event,
+          display: event.rrule ? 'list-item' : 'block',
+          backgroundColor: event.extendedProps.calendarEventColor,
+        }
+      })
+      this.updateCalendarSource()
     },
 
     /* UNCHECK ALL CALENDAR EVENTS */
     uncheckAllEvents() {
       this.calendarEventStore.calendarEvents.forEach((calendarEvent) => {
         if (calendarEvent.calendarEventId) {
-          this.calendarEventStore.selectedCalendarEvent[calendarEvent.calendarEventId] = false
+          this.selectedCalendarEvent[calendarEvent.calendarEventId] = false
         }
       })
+
+      const events = this.calendarOptions.events
+
+      if (!Array.isArray(events)) {
+        return
+      }
+
+       this.calendarOptions.events = events.map((event: any) => {
+        return {
+          ...event,
+          display: 'none',
+          backgroundColor: event.extendedProps.calendarEventColor,
+        }
+      })
+      this.updateCalendarSource()
     },
 
     /* CHECK SHOW/HIDE INDIVIDUAL CALENDAR EVENT */
     handleCheckboxChange(calendarEventId: string, calendarEventGroupId: string) {
-      const isChecked = this.calendarEventStore.selectedCalendarEvent[calendarEventId]
+      const isChecked = this.selectedCalendarEvent[calendarEventId]
       const events = this.calendarOptions.events
 
       if (!Array.isArray(events)) {
@@ -513,6 +551,7 @@ export default defineComponent({
         }
         return event
       })
+      this.updateCalendarSource()
     },
 
     /* SIDEBAR VCALENDAR CHECK MOVEMENT */
@@ -529,6 +568,16 @@ export default defineComponent({
       this.calendarApi.changeView('timeGridDay')
       this.calendarApi.gotoDate(info.endDate)
       this.calendarEventStore.getCalendarEventsByCalendarId(this.calendarEventStore.selectedCalendarId)
+    },
+
+    /* UPDATE CALENDAR STATIC DATES */
+    updateCalendarSource() {
+      if (this.calendarApi) {
+        this.calendarApi.removeAllEventSources()
+        this.calendarApi.addEventSource(this.calendarOptions.events)
+      } else {
+        this.calendarOptions.events = this.calendarOptions.events
+      }
     },
   },
 
@@ -552,3 +601,9 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+:deep(.fc-day-past) { background-color: #f1f1f1 !important; }
+.popoverStyle { z-index: 9999 !important; }
+.popover { z-index: 1090 !important; }
+</style>

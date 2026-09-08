@@ -20,7 +20,7 @@
                 prop="calendarName"
                 :rules="[{ required: true, message: 'Please enter calendar name', trigger: 'blur' }]"
             >
-                <el-input v-model="calendarStore.calendarForm.calendarName" placeholder="Enter calendar name"  />
+                <el-input v-model="calendarStore.calendarForm.calendarName" placeholder="Enter calendar name" :prefix-icon="Edit" />
             </el-form-item>
 
             <div class="flex justify-end pt-4 border-t border-slate-200 mt-6">
@@ -46,11 +46,13 @@
 
 <script lang="ts">
 import { useCalendarStore } from '@/stores/useCalendarStore';
+import { Edit, } from '@element-plus/icons-vue'
 
 export default {
+    components: { Edit },
     setup() {
         const calendarStore = useCalendarStore()
-        return { calendarStore }
+        return { calendarStore, Edit }
     },
     data() {
         return {
