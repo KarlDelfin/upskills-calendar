@@ -477,8 +477,8 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
           .from('CalendarEvent')
           .select('*')
           .eq('calendarId', this.selectedCalendarId)
-          .gte('dateTimeStarted', this.firstDayOfMonth)
-          .lte('dateTimeEnded', this.lastDayOfMonth)
+          .lte('dateTimeStarted', this.lastDayOfMonth)
+          .gte('dateTimeEnded', this.firstDayOfMonth)
 
         if (error) throw error
 
