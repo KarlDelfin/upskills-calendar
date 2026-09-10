@@ -17,7 +17,7 @@
       </div>
 
       <div class="w-full">
-        <el-button class="w-full" @click="calendarEventStore.formController('Create Calendar')" type="primary">Create Calendar</el-button>
+        <el-button class="w-full" @click="calendarStore.formController('Create Calendar', {})" type="primary">Create Calendar</el-button>
       </div>
 
       <div class="flex flex-col gap-3">
@@ -151,7 +151,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { useCalendarEventStore } from '../stores/useCalendarEventStore'
 import { supabase } from '../utils/supabaseClient'
 import FullCalendar from '@fullcalendar/vue3'
 import rrulePlugin from '@fullcalendar/rrule'
@@ -167,13 +166,18 @@ import CalendarForm from '@/components/form/CalendarForm.vue'
 import CalendarEventForm from '@/components/form/CalendarEventForm.vue'
 import tippy from 'tippy.js'
 
+import { useCalendarEventStore } from '../stores/useCalendarEventStore'
+import { useCalendarStore } from '../stores/useCalendarStore'
+
+
 export default defineComponent({
   name: 'HomeView',
   components: { FullCalendar, CalendarForm, CalendarEventForm },
   
   setup() {
     const calendarEventStore = useCalendarEventStore()
-    return { calendarEventStore }
+    const calendarStore = useCalendarStore()
+    return { calendarEventStore, calendarStore }
   },
 
   data() {
