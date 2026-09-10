@@ -37,10 +37,14 @@ async function initApp() {
   }
 
   supabase.auth.onAuthStateChange((event, session) => {
+    const authStore = useAuthStore()
+    
     if (session) {
       authStore.setUser(session)
+      app.config.globalProperties.$userId = session.user.id
     } else {
       authStore.setUser(null)
+      app.config.globalProperties.$userId = null
     }
   })
 

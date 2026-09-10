@@ -19,7 +19,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from) => {
-  const companyName = 'COMPANY NAME'
+  const companyName = 'Calendar'
 
   if (to.name === 'Home') {
     document.title = companyName

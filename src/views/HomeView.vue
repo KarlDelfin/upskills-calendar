@@ -260,7 +260,7 @@ export default defineComponent({
             click: () => this.calendarEventStore.formController('Create Event'),
           },
           prevCustom: {
-            text: '‹',
+            text: '«',
             click: () => {
               this.calendarEventStore.pickerKey++
               this.calendarApi.prev()
@@ -280,7 +280,7 @@ export default defineComponent({
           },
          
           nextCustom: {
-            text: '›',
+            text: '»',
             click: () => {
               this.calendarEventStore.pickerKey++
               this.calendarApi.next()

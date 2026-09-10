@@ -19,7 +19,7 @@
           class="text-[var(--thiColor)] m-0 text-sm md:text-base font-bold tracking-wider uppercase truncate px-2"
         >
           <a href="/" class="hover:text-[var(--secColor)] transition-colors">
-            Company Name
+            Calendar
           </a>
         </h2>
 

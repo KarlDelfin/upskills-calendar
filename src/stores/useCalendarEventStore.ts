@@ -156,14 +156,14 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
   },
 
   actions: {
-    /* Get current logged in user ID safely */
+    /* GET CURRENT USER ID */
     async getCurrentUserId(): Promise<string | null> {
       const { data } = await supabase.auth.getUser()
       return data.user?.id || null
     },
 
     /* FORM CONTROLLER */
-    async formController(title: string) {
+    async formController(title: string): Promise<void> {
       this.dialog.title = title
       if (title === 'Create Calendar') {
         this.dialog.calendarForm = true
@@ -247,7 +247,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     },
 
     /* CREATE / UPDATE FORM SUBMISSION */
-    async submitForm() {
+    async submitForm(): Promise<void> {
       this.loading = true
       const currentUserId = await this.getCurrentUserId()
 
@@ -384,7 +384,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     },
 
     /* GET CALENDARS BY USER ID */
-    async getCalendarsByUserId() {
+    async getCalendarsByUserId(): Promise<void> {
       this.sidebar.sharedCalendarId = ''
       try {
         const userId = await this.getCurrentUserId()
@@ -419,7 +419,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     },
 
     /* GET SHARED CALENDARS */
-    async getSharedCalendarsByUserId() {
+    async getSharedCalendarsByUserId(): Promise<void> {
       this.sidebar.calendarId = ''
       try {
         const userId = await this.getCurrentUserId()
@@ -462,7 +462,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     },
 
     /* GET CALENDAR EVENTS BY CALENDAR ID */
-    async getCalendarEventsByCalendarId(calendarId: string) {
+    async getCalendarEventsByCalendarId(calendarId: string): Promise<void> {
       this.selectedCalendarId = calendarId
 
       if (!this.selectedCalendarId) {
@@ -484,7 +484,6 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
 
         this.rawCalendarEvents = data || []
 
-        // Filter events for sidebar checkboxes
         this.calendarEvents = (data || []).filter(
           (value, index, self) =>
             index === self.findIndex((event) => event.calendarEventGroupId === value.calendarEventGroupId)
@@ -498,7 +497,7 @@ export const useCalendarEventStore = defineStore('calendarEvent', {
     },
 
     /* DELETE CALENDAR EVENT */
-    async deleteCalendarEvent() {
+    async deleteCalendarEvent(): Promise<void> {
       this.loading = true
 
       try {
